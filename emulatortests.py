@@ -32,6 +32,33 @@ def find_testsuite(testsuite_key):
             raise Exception("Couldn't find testsuite with key {}".format(testsuite_key))
         return rows[0]
 
+def parse_emulator(emulator_dir):
+    emulator_key = os.path.basename(emulator_dir)
+    emulator_id, emulator_name = find_emulator(emulator_key)
+    for version_dir in glob(os.path.join(emulator_dir, '*')):
+        parse_emulator_version(version_dir, emulator_id, emulator_key)
+
+def parse_emulator_version(version_dir, emulator_id, emulator_key):
+    version_key = os.path.basename(version_dir)
+    version_id, version_name = find_version(emulator_id, version_key)
+    for testsuite_dir in glob(os.path.join(version_dir, '*')):
+        parse_testsuite(testsuite_dir, emulator_key, version_key)
+
+def parse_testsuite(testsuite_dir, emulator_key, version_key):
+    testsuite_key = os.path.basename(testsuite_dir)
+    testsuite_id, testsuite_name, testsuite_parser = find_testsuite(testsuite_key)
+    for datafile in glob(os.path.join(testsuite_dir, '*.scr')):
+        parse_screenshot(datafile, emulator_key, version_key, testsuite_key, testsuite_parser)
+
+def parse_screenshot(datafile, emulator_key, version_key, testsuite_key, testsuite_parser):
+    result = analyzer.analyze(datafile, testsuite_parser)
+
+    version_results = results[emulator_key][version_key]
+
+    testsuite_results = version_results[testsuite_key]
+    merged_results = merge_results(testsuite_results, result)
+    version_results[testsuite_key] = merged_results
+
 def merge_results(old, new):
     merged = old.copy()
     for k, v in new.items():
@@ -52,21 +79,6 @@ analyzer = ScreenshotAnalyzer()
 results = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(lambda: {})))
 
 for emulator_dir in glob(os.path.join(DATA_DIR, '*')):
-    emulator_key = os.path.basename(emulator_dir)
-    emulator_id, emulator_name = find_emulator(emulator_key)
-    for version_dir in glob(os.path.join(emulator_dir, '*')):
-        version_key = os.path.basename(version_dir)
-        version_id, version_name = find_version(emulator_id, version_key)
-        for testsuite_dir in glob(os.path.join(version_dir, '*')):
-            testsuite_key = os.path.basename(testsuite_dir)
-            testsuite_id, testsuite_name, testsuite_parser = find_testsuite(testsuite_key)
-            for datafile in glob(os.path.join(testsuite_dir, '*.scr')):
-                result = analyzer.analyze(datafile, testsuite_parser)
-
-                version_results = results[emulator_key][version_key]
-
-                testsuite_results = version_results[testsuite_key]
-                merged_results = merge_results(testsuite_results, result)
-                version_results[testsuite_key] = merged_results
+    parse_emulator(emulator_dir)
 
 print(results)
