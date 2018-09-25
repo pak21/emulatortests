@@ -10,54 +10,59 @@ from screenshotanalyzer import ScreenshotAnalyzer
 
 def find_emulator(emulator_key):
     with contextlib.closing(conn.cursor()) as cursor:
-        cursor.execute('SELECT id, name FROM emulators WHERE `key` = %s', (emulator_key,))
+        cursor.execute('SELECT id FROM emulators WHERE `key` = %s', (emulator_key,))
         rows = cursor.fetchall()
         if len(rows) != 1:
             raise Exception("Couldn't find emulator with key {}".format(emulator_key))
-        return rows[0]
+        return rows[0][0]
 
 def find_version(emulator_id, version_key):
     with contextlib.closing(conn.cursor()) as cursor:
-        cursor.execute('SELECT id, version FROM emulator_versions WHERE emulator_id = %s AND `key` = %s', (emulator_id, version_key))
+        cursor.execute('SELECT id FROM emulator_versions WHERE emulator_id = %s AND `key` = %s', (emulator_id, version_key))
         rows = cursor.fetchall()
         if len(rows) != 1:
             raise Exception("Couldn't find emulator version for emulator {} with key {}".format(emulator_id, version_key))
-        return rows[0]
+        return rows[0][0]
 
 def find_testsuite(testsuite_key):
     with contextlib.closing(conn.cursor()) as cursor:
-        cursor.execute('SELECT id, name, parser FROM testsuites WHERE `key` = %s', (testsuite_key,))
+        cursor.execute('SELECT id, parser FROM testsuites WHERE `key` = %s', (testsuite_key,))
         rows = cursor.fetchall()
         if len(rows) != 1:
             raise Exception("Couldn't find testsuite with key {}".format(testsuite_key))
         return rows[0]
 
+def get_all_tests():
+    with contextlib.closing(conn.cursor()) as cursor:
+        cursor.execute('SELECT id, testsuite_id, name FROM tests')
+        return cursor.fetchall()
+
 def parse_emulator(emulator_dir):
     emulator_key = os.path.basename(emulator_dir)
-    emulator_id, emulator_name = find_emulator(emulator_key)
+    emulator_id = find_emulator(emulator_key)
     for version_dir in glob(os.path.join(emulator_dir, '*')):
-        parse_emulator_version(version_dir, emulator_id, emulator_key)
+        parse_emulator_version(version_dir, emulator_id)
 
-def parse_emulator_version(version_dir, emulator_id, emulator_key):
+def parse_emulator_version(version_dir, emulator_id):
     version_key = os.path.basename(version_dir)
-    version_id, version_name = find_version(emulator_id, version_key)
+    version_id = find_version(emulator_id, version_key)
     for testsuite_dir in glob(os.path.join(version_dir, '*')):
-        parse_testsuite(testsuite_dir, emulator_key, version_key)
+        parse_testsuite(testsuite_dir, version_id)
 
-def parse_testsuite(testsuite_dir, emulator_key, version_key):
+def parse_testsuite(testsuite_dir, version_id):
     testsuite_key = os.path.basename(testsuite_dir)
-    testsuite_id, testsuite_name, testsuite_parser = find_testsuite(testsuite_key)
+    testsuite_id, testsuite_parser = find_testsuite(testsuite_key)
+    results = {}
     for datafile in glob(os.path.join(testsuite_dir, '*.scr')):
-        parse_screenshot(datafile, emulator_key, version_key, testsuite_key, testsuite_parser)
+        results = parse_screenshot(results, datafile, testsuite_parser)
+    for test_key, test_value in results.items():
+        test_id = tests_cache[(testsuite_id, test_key)]
+        # Hopefully I don't need to explain why this is a bad idea
+        print('INSERT INTO results SET emulator_version_id = {}, test_id = {}, result = \'{}\';'.format(version_id, test_id, test_value))
 
-def parse_screenshot(datafile, emulator_key, version_key, testsuite_key, testsuite_parser):
-    result = analyzer.analyze(datafile, testsuite_parser)
-
-    version_results = results[emulator_key][version_key]
-
-    testsuite_results = version_results[testsuite_key]
-    merged_results = merge_results(testsuite_results, result)
-    version_results[testsuite_key] = merged_results
+def parse_screenshot(results, datafile, testsuite_parser):
+    result = analyzer.analyze(datafile, testsuite_parser) 
+    return merge_results(results, result)
 
 def merge_results(old, new):
     merged = old.copy()
@@ -76,9 +81,8 @@ database_password = os.environ['DATABASE_PASSWORD']
 conn = mariadb.connect(database='emulator_tests', user='philip', password=database_password)
 
 analyzer = ScreenshotAnalyzer()
-results = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(lambda: {})))
+
+tests_cache = dict([((testsuite_id, name), test_id) for test_id, testsuite_id, name in get_all_tests()])
 
 for emulator_dir in glob(os.path.join(DATA_DIR, '*')):
     parse_emulator(emulator_dir)
-
-print(results)
