@@ -37,7 +37,7 @@ CREATE TABLE `emulator_versions` (
   KEY `release_date` (`release_date`),
   KEY `test_date` (`test_date`),
   CONSTRAINT `emulator_versions_ibfk_1` FOREIGN KEY (`emulator_id`) REFERENCES `emulators` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -46,7 +46,7 @@ CREATE TABLE `emulator_versions` (
 
 LOCK TABLES `emulator_versions` WRITE;
 /*!40000 ALTER TABLE `emulator_versions` DISABLE KEYS */;
-INSERT INTO `emulator_versions` VALUES (1,1,'1.5.6','1.5.6','2018-08-06','2018-08-31'),(2,1,'1.5.5','1.5.5','2018-07-01','2018-08-31'),(3,1,'1.3.2','1.3.2','2016-12-05','2018-08-31'),(4,2,'7.0','7.0',NULL,'2018-09-02'),(5,3,'0.666','0.666',NULL,'2018-09-02');
+INSERT INTO `emulator_versions` VALUES (1,1,'1.5.6','1.5.6','2018-08-06','2018-08-31'),(2,1,'1.5.5','1.5.5','2018-07-01','2018-08-31'),(3,1,'1.3.2','1.3.2','2016-12-05','2018-08-31'),(4,2,'7.0','7.0','2018-05-25','2018-09-02'),(5,3,'0.666','0.666',NULL,'2018-09-02'),(6,4,'2.8 beta 101009','2.8-b101009','2009-10-10','2018-09-26');
 /*!40000 ALTER TABLE `emulator_versions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -64,7 +64,7 @@ CREATE TABLE `emulators` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `key` (`key`),
   KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -73,7 +73,7 @@ CREATE TABLE `emulators` (
 
 LOCK TABLES `emulators` WRITE;
 /*!40000 ALTER TABLE `emulators` DISABLE KEYS */;
-INSERT INTO `emulators` VALUES (1,'Fuse','fuse'),(2,'ZEsarUX','zesarux'),(3,'ZXSpin','zxspin');
+INSERT INTO `emulators` VALUES (1,'Fuse','fuse'),(2,'ZEsarUX','zesarux'),(3,'ZXSpin','zxspin'),(4,'SpecEmu','specemu');
 /*!40000 ALTER TABLE `emulators` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -173,4 +173,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-09-25 21:45:23
+-- Dump completed on 2018-09-26 23:11:51
