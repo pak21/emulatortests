@@ -37,6 +37,12 @@ def get_all_tests():
         cursor.execute('SELECT id, testsuite_id, name FROM tests')
         return cursor.fetchall()
 
+def get_results(version_id, testsuite_id):
+    with contextlib.closing(conn.cursor()) as cursor:
+        cursor.execute('SELECT test_id, result FROM results JOIN tests ON results.test_id = tests.id WHERE results.emulator_version_id = %s AND tests.testsuite_id = %s', (version_id, testsuite_id))
+        rows = cursor.fetchall()
+        return dict(rows)
+
 def parse_emulator(emulator_dir):
     emulator_key = os.path.basename(emulator_dir)
     emulator_id = find_emulator(emulator_key)
@@ -49,19 +55,47 @@ def parse_emulator_version(version_dir, emulator_id):
     for testsuite_dir in glob(os.path.join(version_dir, '*')):
         parse_testsuite(testsuite_dir, version_id)
 
+def write_new_results(results_to_write, version_id):
+    tuples_to_write = [(version_id, test_id, test_result) for test_id, test_result in results_to_write.items()]
+    values_to_write = tuple([item for t in tuples_to_write for item in t])
+
+    placeholders = ','.join(['(%s,%s,%s)'] * len(results_to_write))
+    sql = 'INSERT INTO results (emulator_version_id, test_id, result) VALUES {}'.format(placeholders)
+
+    with contextlib.closing(conn.cursor()) as cursor:
+        cursor.execute(sql, values_to_write)
+        conn.commit()
+
+def find_new_results_and_write(results, version_id, testsuite_id):
+    results_by_id = {tests_cache[(testsuite_id, k)]: v for k, v in results.items()}
+    old_results = get_results(version_id, testsuite_id)
+
+    results_to_write = {}
+    for k, v in results_by_id.items():
+        if k in old_results:
+            if old_results[k] != v:
+                raise Exception('New result "{}" for {} does not match old result "{}"'.format(v, k, old_results[k]))
+            # If the values were equal, don't need to make any changes
+        else:
+            # If the value didn't exist in the old results, this is a new result so add it
+            results_to_write[k] = v
+
+    if results_to_write:
+        write_new_results(results_to_write, version_id)
+
 def parse_testsuite(testsuite_dir, version_id):
     testsuite_key = os.path.basename(testsuite_dir)
     testsuite_id, testsuite_parser = find_testsuite(testsuite_key)
+
     results = {}
     for datafile in glob(os.path.join(testsuite_dir, '*.scr')):
         results = parse_screenshot(results, datafile, testsuite_parser)
-    for test_key, test_value in results.items():
-        test_id = tests_cache[(testsuite_id, test_key)]
-        # Hopefully I don't need to explain why this is a bad idea
-        print('INSERT INTO results SET emulator_version_id = {}, test_id = {}, result = \'{}\';'.format(version_id, test_id, test_value))
+
+    if results:
+        find_new_results_and_write(results, version_id, testsuite_id)
 
 def parse_screenshot(results, datafile, testsuite_parser):
-    result = analyzer.analyze(datafile, testsuite_parser) 
+    result = analyzer.analyze(datafile, testsuite_parser)
     return merge_results(results, result)
 
 def merge_results(old, new):
@@ -69,7 +103,7 @@ def merge_results(old, new):
     for k, v in new.items():
         if k in old:
             if old[k] != v:
-                raise Exception('Inconsistent results for {}: old {}, new {}'.format(k, old[k], v))
+                raise Exception('Inconsistent results for {}: old "{}", new "{}"'.format(k, old[k], v))
         else:
             merged[k] = v
 
@@ -82,7 +116,7 @@ conn = mariadb.connect(database='emulator_tests', user='philip', password=databa
 
 analyzer = ScreenshotAnalyzer()
 
-tests_cache = dict([((testsuite_id, name), test_id) for test_id, testsuite_id, name in get_all_tests()])
+tests_cache = {(testsuite_id, name): test_id for test_id, testsuite_id, name in get_all_tests()}
 
 for emulator_dir in glob(os.path.join(DATA_DIR, '*')):
     parse_emulator(emulator_dir)

@@ -5,9 +5,9 @@ from parser import Parser
 
 class ScreenshotAnalyzer:
     fusetest_parsers = [
-            ('^Frame length 0x8000 \+ (0x[0-9a-f]{4})', lambda m: 'Frame length', lambda m: 0x8000 + int(m[1], 16)),
+            ('^Frame length 0x8000 \+ (0x[0-9a-f]{4})', lambda m: 'Frame length', lambda m: str(0x8000 + int(m[1], 16))),
             ('^Machine type: (.+?) *$', lambda m: 'Machine type', lambda m: m[1]),
-            ('^Contention offset: (0x[0-9a-f]{2})', lambda m: 'Contention offset', lambda m: int(m[1], 16)),
+            ('^Contention offset: (0x[0-9a-f]{2})', lambda m: 'Contention offset', lambda m: str(int(m[1], 16))),
             ('^(.+)\.\.\. (.+?) *$', lambda m: m[1], lambda m: m[2])
             ]
 
