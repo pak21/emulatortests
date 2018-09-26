@@ -19,7 +19,6 @@ test suites against Spectrum emulators.
 Oh so much. Some ideas:
 
 * Work out the best way to host the already captured screenshots.
-* Write test results to the database.
 * Produce report showing results.
 * Add more emulators and versions.
 * Add the ability to parse PNG screenshots or something for emulators which
