@@ -125,8 +125,11 @@ class ImageToTextConverter:
             }
 
     def find_character(self, h):
-        c = self._known_hashes[h]
-        return c
+        try:
+            c = self._known_hashes[h]
+            return c
+        except KeyError:
+            return ' '
 
     def _to_characters(self, character_hashes):
         return [''.join([self.find_character(h) for h in row]) for row in character_hashes]
