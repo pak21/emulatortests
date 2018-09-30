@@ -23,7 +23,7 @@ reshaped_image = np.reshape(raw_image, newshape=(raw_image.shape[0], -1, planes)
 # Remove any alpha channel if that existed
 if planes == 4:
     reshaped_image = reshaped_image[:,:,:-1]
-thresholded_image = (lambda x: x < 128)(reshaped_image)
+thresholded_image = reshaped_image < 128
 pixel_image = np.all(thresholded_image, axis=2)
 
 # Pad out to have a multiple of eight rows
@@ -55,15 +55,10 @@ if row_offset != 0:
 by_character = np.reshape(pixel_image, newshape=(pixel_image.shape[0], -1, 8))
 by_byte = np.apply_along_axis(arr=by_character, func1d=lambda pixels: np.dot(pixels, pixel_values), axis=2)
 
-# Now group each 0-255 value into the vertical sets of 8 values which make up
-# a character; the conversion to uint64 at the end is just to prevent integer
-# overflows when making the hash values later
-grouped_into_characters = np.reshape(np.transpose(by_byte), newshape=(by_byte.shape[1], -1, 8))
-character_data = np.transpose(grouped_into_characters, axes=(1, 0, 2)).astype(np.uint64)
-
 # Jam this into the middle of the image to text converter for now
 c = ImageToTextConverter()
-character_hashes = c._to_character_hashes(character_data)
+character_matrix = c._to_character_matrix(by_byte)
+character_hashes = c._to_character_hashes(character_matrix)
 characters = c._to_characters(character_hashes)
 
 print(characters)

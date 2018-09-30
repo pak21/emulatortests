@@ -1,3 +1,5 @@
+import numpy as np
+
 class ImageToTextConverter:
     def _unscramble(self, scrambled):
         unscrambled = [None] * 192
@@ -10,10 +12,13 @@ class ImageToTextConverter:
                     output_row = 64 * third + 8 * character_row + pixel_row
                     unscrambled[output_row] = input_data
 
-        return unscrambled
+        np_unscrambled = np.array([np.frombuffer(row, dtype=np.uint) for row in unscrambled])
+        return np_unscrambled
 
     def _to_character_matrix(self, unscrambled):
-        return [[[unscrambled[8 * row + pixel_row][column] for pixel_row in range(0, 8)] for column in range(0, 32)] for row in range(0, 24)]
+        grouped_into_characters = np.reshape(np.transpose(unscrambled), newshape=(unscrambled.shape[1], -1, 8))
+        character_matrix = np.transpose(grouped_into_characters, axes=(1, 0, 2)).astype(np.uint64)
+        return character_matrix
 
     def _make_hash(self, character):
         character_hash = 0
