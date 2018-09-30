@@ -13,7 +13,7 @@ class ScreenshotAnalyzer:
             ]
 
     z80test_parsers = [
-            ('^ *([0-9]{3} .+?) *([A-Z]+)$', lambda m: m[1], lambda m: m[2]),
+            ('^ *([0-9]{3} .+?) *([A-Z]+) *$', lambda m: m[1], lambda m: m[2]),
             ]
 
     parsers = {
