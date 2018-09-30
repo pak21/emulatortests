@@ -8,11 +8,11 @@ class ImageToTextConverter:
                 for pixel_row in range(0, 8):
                     input_row = 64 * third + 8 * pixel_row + character_row
                     input_offset = 32 * input_row
-                    input_data = scrambled[input_offset:input_offset+32]
+                    input_data = np.frombuffer(scrambled, offset=input_offset, count=32, dtype=np.uint8)
                     output_row = 64 * third + 8 * character_row + pixel_row
                     unscrambled[output_row] = input_data
 
-        np_unscrambled = np.array([np.frombuffer(row, dtype=np.uint) for row in unscrambled])
+        np_unscrambled = np.array(unscrambled)
         return np_unscrambled
 
     def _to_character_matrix(self, unscrambled):
