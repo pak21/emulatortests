@@ -88,14 +88,21 @@ def parse_testsuite(testsuite_dir, version_id):
     testsuite_id, testsuite_parser = find_testsuite(testsuite_key)
 
     results = {}
-    for datafile in glob(os.path.join(testsuite_dir, '*.scr')):
-        results = parse_screenshot(results, datafile, testsuite_parser)
+    for scrfile in glob(os.path.join(testsuite_dir, '*.scr')):
+        results = parse_screenshot(results, scrfile, testsuite_parser)
+
+    for pngfile in glob(os.path.join(testsuite_dir, '*.png')):
+        results = parse_png(results, pngfile, testsuite_parser)
 
     if results:
         find_new_results_and_write(results, version_id, testsuite_id)
 
-def parse_screenshot(results, datafile, testsuite_parser):
-    result = analyzer.analyze_scr(datafile, testsuite_parser)
+def parse_screenshot(results, scrfile, testsuite_parser):
+    result = analyzer.analyze_scr(scrfile, testsuite_parser)
+    return merge_results(results, result)
+
+def parse_png(results, pngfile, testsuite_parser):
+    result = analyzer.analyze_png(pngfile, testsuite_parser)
     return merge_results(results, result)
 
 def merge_results(old, new):
