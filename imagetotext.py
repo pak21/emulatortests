@@ -20,15 +20,10 @@ class ImageToTextConverter:
         character_matrix = np.transpose(grouped_into_characters, axes=(1, 0, 2)).astype(np.uint64)
         return character_matrix
 
-    def _make_hash(self, character):
-        character_hash = 0
-        for pixel_row in character:
-            character_hash *= 256
-            character_hash += pixel_row
-        return character_hash
+    _row_values = np.array(list(map(lambda x: 256**x, range(7, -1, -1))))
 
     def _to_character_hashes(self, characters):
-        return [[self._make_hash(c) for c in row] for row in characters]
+        return np.apply_along_axis(arr=characters, func1d=lambda rows: np.dot(rows, self._row_values), axis=2)
 
     _known_hashes = {
             0: ' ',
