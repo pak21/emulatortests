@@ -95,7 +95,7 @@ def parse_testsuite(testsuite_dir, version_id):
         find_new_results_and_write(results, version_id, testsuite_id)
 
 def parse_screenshot(results, datafile, testsuite_parser):
-    result = analyzer.analyze(datafile, testsuite_parser)
+    result = analyzer.analyze_scr(datafile, testsuite_parser)
     return merge_results(results, result)
 
 def merge_results(old, new):

@@ -22,10 +22,11 @@ class ScreenshotAnalyzer:
 
     converter = ImageToTextConverter()
 
-    def analyze(self, filename, parser_key):
+    def analyze_scr(self, filename, parser_key):
         with open(filename, 'rb') as f:
-            scrambled = f.read()
-        characters = self.converter.convert(scrambled)
+            scrambled = f.read(6144)
+        unscrambled = self.converter.unscramble(scrambled)
+        characters = self.converter.convert(unscrambled)
         result = self.parsers[parser_key].parse(characters)
 
         return result

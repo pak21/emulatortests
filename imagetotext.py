@@ -1,10 +1,6 @@
 import numpy as np
 
 class ImageToTextConverter:
-    def _unscramble(self, scrambled):
-        as_np = np.frombuffer(scrambled, count=6144, dtype=np.uint8)
-        return np.reshape(np.transpose(np.reshape(as_np, newshape=(3, 8, 8, 32)), axes=(0, 2, 1, 3)), newshape=(192, 32))
-
     def _to_character_matrix(self, unscrambled):
         grouped_into_characters = np.reshape(np.transpose(unscrambled), newshape=(unscrambled.shape[1], -1, 8))
         character_matrix = np.transpose(grouped_into_characters, axes=(1, 0, 2)).astype(np.uint64)
@@ -124,8 +120,11 @@ class ImageToTextConverter:
     def _to_characters(self, character_hashes):
         return [''.join([self.find_character(h) for h in row]) for row in character_hashes]
 
-    def convert(self, scrambled_data):
-        unscrambled_data = self._unscramble(scrambled_data)
+    def unscramble(self, scrambled):
+        as_np = np.frombuffer(scrambled, count=6144, dtype=np.uint8)
+        return np.reshape(np.transpose(np.reshape(as_np, newshape=(3, 8, 8, 32)), axes=(0, 2, 1, 3)), newshape=(192, 32))
+
+    def convert(self, unscrambled_data):
         character_matrix = self._to_character_matrix(unscrambled_data)
         character_hashes = self._to_character_hashes(character_matrix)
         characters = self._to_characters(character_hashes)
